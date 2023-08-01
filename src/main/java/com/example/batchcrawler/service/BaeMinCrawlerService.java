@@ -1,6 +1,8 @@
-package com.example.batchcrawler.batch;
+package com.example.batchcrawler.service;
 
 import com.example.batchcrawler.entity.BaeMinEntity;
+import com.example.batchcrawler.repository.BaeMinRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -11,33 +13,31 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.springframework.batch.core.ExitStatus;
-import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.StepExecutionListener;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.NonTransientResourceException;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
-import org.springframework.stereotype.Component;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
 import static org.openqa.selenium.support.ui.ExpectedConditions.textToBe;
 
+
+@RequiredArgsConstructor
 @Slf4j
-@Component
-public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, StepExecutionListener {
+@Service
+public class BaeMinCrawlerService implements SeleniumCrawlerTemplate<BaeMinEntity, BaeMinRepository> {
+    private WebDriver driver;
+    private WebDriverWait wait;
     private int page = 1;
     private String lastPage = "";
-    private WebDriverWait wait;
-    private WebDriver driver;
+    private final BaeMinRepository baeMinRepository;
+
     @Override
-    public void beforeStep(StepExecution stepExecution) {
-        log.info("-----------Start Chunk-----------");
+    public void openWebDriver() {
         System.setProperty("webdriver.chrome.driver", "C:/Users/USER/chrome/chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
@@ -71,9 +71,10 @@ public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, St
         ));
     }
 
+
+
     @Override
-    public List<BaeMinEntity> read()
-            throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+    public List<BaeMinEntity> execute(Function<BaeMinRepository,BaeMinEntity> function) {
         List<String> postUrls = new ArrayList<>();
         List<BaeMinEntity> baeminList = new ArrayList<>();
 
@@ -108,6 +109,13 @@ public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, St
                         .findFirst().get();
 
                 postUrls.add(hrefContent);
+
+                if(function != null){
+                    BaeMinEntity result = function.apply(baeMinRepository);
+                    if (result != null) {
+                        return null;
+                    }
+                }
 
                 BaeMinEntity baeMinTechBlog = BaeMinEntity.builder()
                         .date(date)
@@ -147,14 +155,12 @@ public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, St
         return baeminList;
     }
 
-
     @Override
-    public ExitStatus afterStep(StepExecution stepExecution) {
+    public void closeWebDriver(WebDriver driver) {
         log.info("Line Reader ended.");
         //Socket Error 방지용
         waitForPageLoad();
         driver.quit();
-        return ExitStatus.COMPLETED;
     }
 
     private void waitForPageLoad() {
@@ -168,4 +174,5 @@ public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, St
         // 해당 조건이 충족될 때까지 기다림
         wait.until(pageLoadCondition);
     }
+
 }

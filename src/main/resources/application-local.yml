@@ -5,6 +5,8 @@ spring:
   profiles:
     activate:
       on-profile: local
+  quartz:
+    job-store-type: memory
   h2:
     console:
       enabled: true

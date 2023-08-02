@@ -42,7 +42,6 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.textToBe;
 @Slf4j
 public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
     private final BaeMinRepository baeMinRepository;
-    private JPAQueryFactory queryFactory;
     private EntityManager entityManager;
     private int page = 1;
     private String lastPage = "";
@@ -52,7 +51,6 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
     public WebCrawlingTasklet(BaeMinRepository baeMinRepository, EntityManagerFactory entityManagerFactory) {
         this.baeMinRepository = baeMinRepository;
         this.entityManager = entityManagerFactory.createEntityManager();
-        this.queryFactory = new JPAQueryFactory(entityManager);
     }
 
     @Override

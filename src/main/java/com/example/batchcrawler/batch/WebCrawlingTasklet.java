@@ -108,6 +108,7 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
 
                     //DB에 넣을 최신 블로그 글이 없는 경우
                     if (byPostId != null) {
+                        closeDriver();
                         chunkContext.getStepContext().getStepExecution().getJobExecution().getExecutionContext().put("condition", "COMPLETED");
                         return RepeatStatus.FINISHED;
                     }
@@ -150,8 +151,7 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
         }
 
         //Socket Error 방지용
-        waitForPageLoad();
-        driver.quit();
+        closeDriver();
 
         chunkContext.getStepContext().getStepExecution().getJobExecution().getExecutionContext().put("condition", "COMPLETED");
         return RepeatStatus.FINISHED;
@@ -159,7 +159,6 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
     }
 
     private void createDriver(){
-        log.info("===========Tasklet Start=========");
         System.setProperty("webdriver.chrome.driver", "C:/Users/USER/chrome/chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
@@ -193,6 +192,15 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
         ));
     }
 
+    private void closeDriver(){
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        driver.quit();
+    }
+
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
@@ -205,15 +213,5 @@ public class WebCrawlingTasklet implements Tasklet, StepExecutionListener {
         return ExitStatus.COMPLETED;
     }
 
-    private void waitForPageLoad() {
 
-        ExpectedCondition<Boolean> pageLoadCondition = new ExpectedCondition<Boolean>() {
-            public Boolean apply(WebDriver driver) {
-                return ((JavascriptExecutor) driver).executeScript("return document.readyState").equals("complete");
-            }
-        };
-
-        // 해당 조건이 충족될 때까지 기다림
-        wait.until(pageLoadCondition);
-    }
 }

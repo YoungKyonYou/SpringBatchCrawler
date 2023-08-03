@@ -152,20 +152,14 @@ public class WebCrawlingItemReader implements ItemReader<List<BaeMinEntity>>, St
     public ExitStatus afterStep(StepExecution stepExecution) {
         log.info("Line Reader ended.");
         //Socket Error 방지용
-        waitForPageLoad();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         driver.quit();
         return ExitStatus.COMPLETED;
     }
 
-    private void waitForPageLoad() {
 
-        ExpectedCondition<Boolean> pageLoadCondition = new ExpectedCondition<Boolean>() {
-            public Boolean apply(WebDriver driver) {
-                return ((JavascriptExecutor) driver).executeScript("return document.readyState").equals("complete");
-            }
-        };
-
-        // 해당 조건이 충족될 때까지 기다림
-        wait.until(pageLoadCondition);
-    }
 }

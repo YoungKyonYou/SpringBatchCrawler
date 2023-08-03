@@ -1,5 +1,7 @@
 package com.example.batchcrawler.quartz;
 
+import java.text.ParseException;
+import java.util.Date;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -20,14 +22,11 @@ public class QuartzConfig {
     }
 
     @Bean
-    public Trigger jobTrigger() {
-
-        SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
-                .withIntervalInSeconds(600).withRepeatCount(1);
-
-        return TriggerBuilder.newTrigger()
-                .forJob(quartzJobDetail())
-                .withSchedule(scheduleBuilder)
-                .build();
+    public Trigger jobTrigger() throws ParseException {
+        CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
+        trigger.setJobDetail(quartzJobDetail());
+        trigger.setCronExpression("0 * * * * ?");
+        trigger.afterPropertiesSet();
+        return trigger.getObject();
     }
 }
